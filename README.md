@@ -9,7 +9,7 @@ This is a weather checking app built with HTML, CSS, bootstrap & JavaScript. ext
 
 ## Demo
 
-
+![App demo](./demo.gif)
 
 ## Features
 
