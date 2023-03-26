@@ -276,11 +276,11 @@ hr{
 #current-location{
   cursor: pointer;
 }
-.btn-disable{
+/* .btn-disable{
   pointer-events: none;
   cursor:none;
   color: #7B7980;
-}
+} */
 .location-btn {
   gap: 11px;
   background: #ffffff14;
@@ -410,4 +410,3 @@ font-size: 15px;
 
 }
 }
-

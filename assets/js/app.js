@@ -14,7 +14,8 @@ export const fetchApi = function (URL, callback) {
     .then(data => callback(data))
 }
 let defaultlat=38.736946;
-let defaultlon=-9.142685;
+let defaultlon= 9.142685;
+
 let dailyData=[];
 let airdataForecast=[];
 let defaultcity='Lisbon';
@@ -54,27 +55,34 @@ function formatDate(value) {
       return (date + " " + month);
   }
 //  sunrise / sunset calculation
-let getSunriseSunSet = (function (value) {
-    let res = new Date(value*1000);
-    let Hour = res.getHours();
-    let Min = res.getMinutes();
-    if (Min < 10) {
-        Min = '0' + Min
-    };
-    return `${Hour}:${Min}`;
+let getSunriseSunSet = (function (value, timezone=1) {
+    let res = new Date((value+timezone)*1000);
+    // res.toUTCString()
+    let f=res.toUTCString().slice(17, 22)
+    return f;
+    // let Hour = res.getHours();
+    // let Min = res.getMinutes();
+    // if (Min < 10) {
+    //     Min = '0' + Min
+    // };
+    // return `${Hour}:${Min}`;
+
+
+
+    // return res.toUTCString().slice(17, 22)
 });
 // update view screen function
 async function updateViewDisplay(location, weatherdata) {
-    let {main, weather,sys, visibility,dt}= weatherdata
+    let {main, weather,sys,timezone, visibility,dt}= weatherdata
     let {country, lat, lon}= location
     let {description, icon }= weather[0]
     let {temp, feels_like,pressure, humidity}= main
-
+console.log('weather after search',weatherdata, visibility);
     if (sys.sunrise) {
         filteredSunrise=sys.sunrise
         filteredSunset= sys.sunset
     }
-
+// console.log(humidity);
     // getting the DOM
     const weatherdataDiv = document.querySelector('.current-forecast-inner');
     const currentWetherCountryDiv = document.querySelector('.currrent-weather-last');
@@ -109,10 +117,10 @@ currentWetherCountryDiv.innerHTML= `
    
 </span>`
 
-sunrisevalueDiv.innerText=getSunriseSunSet(filteredSunrise)+' AM'
-sunsetvalueDiv.innerText=getSunriseSunSet(filteredSunset)+' PM'
+sunrisevalueDiv.innerText=getSunriseSunSet(filteredSunrise,timezone)+' AM'
+sunsetvalueDiv.innerText=getSunriseSunSet(filteredSunset,timezone)+' PM'
 visibilitytextDiv.innerText= visibility/1000+' KM'
-feelslikeDiv.innerText= feels_like+' ℃'
+// feelslikeDiv.innerText= feels_like+' ℃'
 
 // humidity & pressure
 document.querySelector('.humidity-value').innerText=humidity+ '%';
@@ -121,6 +129,7 @@ document.querySelector('.pressure-value').innerText=pressure +'hPa';
 
 async function updateAirPollutionDataDisplay(filter=false, airdata) {
     if (filter===false) {
+        
         const {list}= airdata
     const {o3, nh3, no2, so2} = list[0].components
  document.querySelector('.o3-value').innerText=o3;
@@ -144,7 +153,7 @@ async function updateHourlyForecaseDisplay(hourlydata) {
     const {list} = hourlydata;
     const forecaseDatas= list.slice(0,8)
    
- 
+
     // putting value by DOM
     document.querySelector('.hourly-forecast-time1').innerText= formatTime(forecaseDatas[0].dt);
     document.querySelector('.hourly-forecast-time2').innerText= formatTime(forecaseDatas[1].dt);
@@ -355,6 +364,8 @@ let filteredForecast=[]
 let filteredAirForecast=[]
 const updateFilter=(value=1,lat=defaultlat, lon=defaultlon,city=defaultcity, country=defaultcountry)=>{
 //    console.log(filteredForecast);
+document.getElementById('today-highlight-text').innerText='Day Highlight'
+
    if (filteredForecast.length>0) {
     // console.log('data ase');
     updateViewDisplay({country:city +', '+ country, lat: defaultlat, lon: defaultlon}, filteredForecast[value])
@@ -400,6 +411,54 @@ filterBtn4.addEventListener('click', ()=>updateFilter(3))
 
 // initial function call when app opens
 async function pageOpen() {
+
+    // getting current location
+    getLocation()
+        function getLocation() {
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(showPosition, showError);
+            } else { 
+              alert('Geolocation is not supported by this browser.')
+            }
+          }
+          
+          function showPosition(position) {
+            const lat= position.coords.latitude;
+            const lon= position.coords.longitude;
+            defaultlat=lat
+            defaultlon=lon
+            fetch('https://api.ipregistry.co/?key=3489kvz77p6qu0ho')
+    .then(function (response) {
+        return response.json();
+    })
+    .then(function (payload) {
+        defaultcity=payload.location.city
+        defaultcountry= payload.location.country.code
+        // console.log(payload.location.city + ', ' + payload.location.country.code);
+        updateAfterSearch(payload.location.city, payload.location.country.code, lat, lon)
+        currentLocationBtn.classList.add('btn-disable')
+    });
+          }
+          
+          function showError(error) {
+            switch(error.code) {
+              case error.PERMISSION_DENIED:
+                alert("User denied the request for Geolocation.")
+                break;
+              case error.POSITION_UNAVAILABLE:
+                alert("Location information is unavailable.")
+                break;
+              case error.TIMEOUT:
+                alert("The request to get user location timed out.")
+                break;
+              case error.UNKNOWN_ERROR:
+                alert("An unknown error occurred.")
+                break;
+            }
+          }
+
+
+
    const getweatherData= fetchApi(apiUrl.getDefaultWeather(defaultlat, defaultlon), function callback (data){
     // return data;
     // console.log(data)
